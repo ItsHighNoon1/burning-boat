@@ -1,3 +1,6 @@
+#ifndef _display_h_
+#define _display_h_
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -8,3 +11,5 @@ int display_should_close(GLFWwindow* window);
 void display_refresh(GLFWwindow* window);
 
 void display_free(GLFWwindow* window);
+
+#endif
