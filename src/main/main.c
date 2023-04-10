@@ -45,16 +45,21 @@ int main(int argc, char** argv) {
     mat4 proj;
     mat4 vp;
     mat4 mvp;
-    vec3 camera_trans = { -0.5f, -0.5f, -5.0f };
-    glm_translate_make(view, camera_trans);
+    vec3 camera_trans = { 3.0f, -3.0f, -4.0f };
+    
     while (!display_should_close(window)) {
         sim_step(sim);
 
-        render_prepare();
-        render_bind_texture(texture);
+        glm_mat4_identity(view);
+        glm_rotate_y(view, 0.7f, view);
+        glm_rotate_x(view, 0.6f, view);
+        glm_translate(view, camera_trans);
         float aspect = display_aspect(window);
         glm_perspective_default(aspect, proj);
         glm_mat4_mul(proj, view, vp);
+
+        render_prepare();
+        render_bind_texture(texture);
         for (unsigned int i = 0; i < sim->n_particles; i++) {
             glm_translate_make(model, sim->particles[i].x);
             glm_scale_uni(model, 0.1f);
