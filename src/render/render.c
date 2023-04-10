@@ -2,7 +2,7 @@
 
 #include <glad/glad.h>
 
-#include "loader.h"
+#include "../util/loader.h"
 
 void render_prepare() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

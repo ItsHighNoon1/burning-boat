@@ -1,7 +1,7 @@
 #ifndef _render_h_
 #define _render_h_
 
-#include "loader.h"
+#include "../util/loader.h"
 
 void render_prepare();
 

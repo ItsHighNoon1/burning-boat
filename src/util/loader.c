@@ -42,15 +42,15 @@ vao_t* loader_load_vao(float* positions, float* tcoords, float* normals, unsigne
     if (tcoords) {
         normals_offset += N_TCOORDS;
         for (int i = 0; i < n_vertices; i++) {
-            vertex_data[i * stride] = tcoords[i * N_TCOORDS];
-            vertex_data[i * stride + 1] = tcoords[i * N_TCOORDS + 1];
+            vertex_data[i * stride + tcoords_offset] = tcoords[i * N_TCOORDS];
+            vertex_data[i * stride + tcoords_offset + 1] = tcoords[i * N_TCOORDS + 1];
         }
     }
     if (normals) {
         for (int i = 0; i < n_vertices; i++) {
-            vertex_data[i * stride] = normals[i * N_NORMALS];
-            vertex_data[i * stride + 1] = normals[i * N_NORMALS + 1];
-            vertex_data[i * stride + 2] = normals[i * N_NORMALS + 2];
+            vertex_data[i * stride + normals_offset] = normals[i * N_NORMALS];
+            vertex_data[i * stride + normals_offset + 1] = normals[i * N_NORMALS + 1];
+            vertex_data[i * stride + normals_offset + 2] = normals[i * N_NORMALS + 2];
         }
     }
 
@@ -86,6 +86,7 @@ texture_t* loader_load_texture(const char* path) {
     int width;
     int height;
     int comp;
+    stbi_set_flip_vertically_on_load(1);
     stbi_uc* data = stbi_load(path, &width, &height, &comp, 4);
 
     // Allocate texture

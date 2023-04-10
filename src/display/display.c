@@ -42,6 +42,13 @@ void display_refresh(GLFWwindow* window) {
     glfwPollEvents();
 }
 
+float display_aspect(GLFWwindow* window) {
+    int width;
+    int height;
+    glfwGetWindowSize(window, &width, &height);
+    return (float)width / (float)height;
+}
+
 void display_free(GLFWwindow* window) {
     glfwDestroyWindow(window);
     glfwTerminate();

@@ -10,6 +10,8 @@ int display_should_close(GLFWwindow* window);
 
 void display_refresh(GLFWwindow* window);
 
+float display_aspect(GLFWwindow* window);
+
 void display_free(GLFWwindow* window);
 
 #endif

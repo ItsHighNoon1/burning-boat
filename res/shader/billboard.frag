@@ -7,5 +7,9 @@ out vec4 out_frag_color;
 uniform sampler2D u_albedo;
 
 void main() {
-    out_frag_color = texture(u_albedo, v_tcoords);
+    vec4 tex_sample = texture(u_albedo, v_tcoords);
+    if (tex_sample.a < 0.5) {
+        discard;
+    }
+    out_frag_color = tex_sample;
 }
