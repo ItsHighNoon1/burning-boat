@@ -2,7 +2,9 @@
 
 #include <stdlib.h>
 
+#define STB_IMAGE_IMPLEMENTATION
 #include <glad/glad.h>
+#include <stb_image.h>
 
 #define N_POSITIONS 3
 #define N_TCOORDS 2
@@ -31,8 +33,6 @@ vao_t* loader_load_vao(float* positions, float* tcoords, float* normals, unsigne
     if (positions) {
         tcoords_offset += N_POSITIONS;
         normals_offset += N_POSITIONS;
-        glVertexAttribPointer(0, N_POSITIONS, GL_FLOAT, GL_FALSE, stride * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(0);
         for (int i = 0; i < n_vertices; i++) {
             vertex_data[i * stride] = positions[i * N_POSITIONS];
             vertex_data[i * stride + 1] = positions[i * N_POSITIONS + 1];
@@ -41,16 +41,12 @@ vao_t* loader_load_vao(float* positions, float* tcoords, float* normals, unsigne
     }
     if (tcoords) {
         normals_offset += N_TCOORDS;
-        glVertexAttribPointer(1, N_TCOORDS, GL_FLOAT, GL_FALSE, stride * sizeof(float), (void*)(tcoords_offset * sizeof(float)));
-        glEnableVertexAttribArray(1);
         for (int i = 0; i < n_vertices; i++) {
             vertex_data[i * stride] = tcoords[i * N_TCOORDS];
             vertex_data[i * stride + 1] = tcoords[i * N_TCOORDS + 1];
         }
     }
     if (normals) {
-        glVertexAttribPointer(2, N_NORMALS, GL_FLOAT, GL_FALSE, stride * sizeof(float), (void*)(normals_offset * sizeof(float)));
-        glEnableVertexAttribArray(2);
         for (int i = 0; i < n_vertices; i++) {
             vertex_data[i * stride] = normals[i * N_NORMALS];
             vertex_data[i * stride + 1] = normals[i * N_NORMALS + 1];
@@ -63,6 +59,20 @@ vao_t* loader_load_vao(float* positions, float* tcoords, float* normals, unsigne
     glBufferData(GL_ARRAY_BUFFER, n_vertices * stride * sizeof(float), vertex_data, GL_STATIC_DRAW);
     free(vertex_data);
 
+    // Set vertex attribs
+    if (positions) {
+        glVertexAttribPointer(0, N_POSITIONS, GL_FLOAT, GL_FALSE, stride * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+    }
+    if (tcoords) {
+        glVertexAttribPointer(1, N_TCOORDS, GL_FLOAT, GL_FALSE, stride * sizeof(float), (void*)(tcoords_offset * sizeof(float)));
+        glEnableVertexAttribArray(1);
+    }
+    if (normals) {
+        glVertexAttribPointer(2, N_NORMALS, GL_FLOAT, GL_FALSE, stride * sizeof(float), (void*)(normals_offset * sizeof(float)));
+        glEnableVertexAttribArray(2);
+    }
+
     // Upload index data
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vao->index_buffer);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, n_indices * sizeof(unsigned int), indices, GL_STATIC_DRAW);
@@ -71,10 +81,42 @@ vao_t* loader_load_vao(float* positions, float* tcoords, float* normals, unsigne
     return vao;
 }
 
+texture_t* loader_load_texture(const char* path) {
+    // stb load
+    int width;
+    int height;
+    int comp;
+    stbi_uc* data = stbi_load(path, &width, &height, &comp, 4);
+
+    // Allocate texture
+    GLuint texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    // stb free
+    stbi_image_free(data);
+
+    // Return texture info
+    texture_t* texture_struct = malloc(sizeof(texture_t));
+    texture_struct->texture = texture;
+    return texture_struct;
+}
+
 void loader_free_vao(vao_t* vao) {
     // Free objects
     GLuint buffers[] = { vao->vertex_buffer, vao->index_buffer };
     glDeleteBuffers(2, buffers);
     glDeleteVertexArrays(1, &(vao->array));
     free(vao);
+}
+
+void loader_free_texture(texture_t* texture) {
+    glDeleteTextures(1, &(texture->texture));
+    free(texture);
 }
