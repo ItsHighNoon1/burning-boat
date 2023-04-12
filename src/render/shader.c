@@ -41,6 +41,17 @@ shader_t* shader_create(const char* vert_path, const char* frag_path) {
     return shader_struct;
 }
 
+shader_t* shader_compute(const char* path) {
+    GLuint compute = _allocate_shader(path, GL_COMPUTE_SHADER);
+    GLuint program = glCreateProgram();
+    glAttachShader(program, compute);
+    glLinkProgram(program);
+    glDeleteShader(compute);
+    shader_t* shader_struct = malloc(sizeof(shader_t));
+    shader_struct->program = program;
+    return shader_struct;
+}
+
 void shader_bind(shader_t* shader) {
     glUseProgram(shader->program);
 }
@@ -56,4 +67,8 @@ GLint uniform_find(shader_t* shader, const char* name) {
 
 void uniform_mat4(GLint location, mat4 m) {
     glUniformMatrix4fv(location, 1, GL_FALSE, m[0]);
+}
+
+void uniform_vec3(GLint location, vec3 v) {
+    glUniform3f(location, v[0], v[1], v[2]);
 }

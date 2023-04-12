@@ -35,36 +35,42 @@ int main(int argc, char** argv) {
     vao_t* vao = loader_load_vao(vertices, tcoords, NULL, indices, 4, 6);
     texture_t* texture = loader_load_texture("res/texture/normal_sphere.png");
 
-    sim_t* sim = sim_create(64);
+    sim_t* sim = sim_create(5000);
 
-    shader_bind(shader);
-    GLint location_mvp = uniform_find(shader, "u_mvp_matrix");
-
+    GLint location_model_view = uniform_find(shader, "u_model_view_matrix");
+    GLint location_projection = uniform_find(shader, "u_projection_matrix");
+    GLint location_debug = uniform_find(shader, "u_debug");
     mat4 model;
     mat4 view;
     mat4 proj;
-    mat4 vp;
-    mat4 mvp;
-    vec3 camera_trans = { 3.0f, -3.0f, -4.0f };
+    
+    vec3 camera_trans = { 12.0f, -12.0f, -12.0f };
     
     while (!display_should_close(window)) {
         sim_step(sim);
 
         glm_mat4_identity(view);
-        glm_rotate_y(view, 0.7f, view);
-        glm_rotate_x(view, 0.6f, view);
+        glm_rotate_x(view, 0.5f, view);
+        glm_rotate_y(view, 0.8f, view);
         glm_translate(view, camera_trans);
         float aspect = display_aspect(window);
         glm_perspective_default(aspect, proj);
-        glm_mat4_mul(proj, view, vp);
 
         render_prepare();
         render_bind_texture(texture);
+        shader_bind(shader);
         for (unsigned int i = 0; i < sim->n_particles; i++) {
             glm_translate_make(model, sim->particles[i].x);
-            glm_scale_uni(model, 0.1f);
-            glm_mat4_mul(vp, model, mvp);
-            uniform_mat4(location_mvp, mvp);
+            glm_rotate_y(model, -0.8f, model);
+            glm_rotate_x(model, -0.5f, model);
+            glm_scale_uni(model, 1.0f);
+            mat4 mv;
+            glm_mat4_mul(view, model, mv);
+            uniform_mat4(location_model_view, mv);
+            uniform_mat4(location_projection, proj);
+            vec3 debug;
+            glm_vec3_copy(sim->particles[i].v, debug);
+            uniform_vec3(location_debug, debug);
             render_vao(vao);
         }
 
