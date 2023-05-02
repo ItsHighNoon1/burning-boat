@@ -3,10 +3,8 @@
 
 #include "../util/loader.h"
 
-void render_prepare();
+void render_prepare(fbo_t* fbo);
 
 void render_vao(vao_t* vao);
-
-void render_bind_texture(texture_t* texture);
 
 #endif

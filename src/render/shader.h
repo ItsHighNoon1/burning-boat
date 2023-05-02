@@ -22,6 +22,8 @@ void uniform_mat4(GLint location, mat4 m);
 
 void uniform_vec3(GLint location, vec3 v);
 
+void uniform_vec2(GLint location, vec2 v);
+
 void uniform_float(GLint location, float f);
 
 void uniform_int(GLint location, int i);

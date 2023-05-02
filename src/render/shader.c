@@ -82,6 +82,10 @@ void uniform_vec3(GLint location, vec3 v) {
     glUniform3f(location, v[0], v[1], v[2]);
 }
 
+void uniform_vec2(GLint location, vec2 v) {
+    glUniform2f(location, v[0], v[1]);
+}
+
 void uniform_float(GLint location, float f) {
     glUniform1f(location, f);
 }

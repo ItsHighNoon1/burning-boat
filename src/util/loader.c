@@ -10,7 +10,7 @@
 #define N_TCOORDS 2
 #define N_NORMALS 3
 
-vao_t* loader_load_vao(float* positions, float* tcoords, float* normals, unsigned int* indices, unsigned int n_vertices, unsigned int n_indices) {
+vao_t* loader_load_vao(const float* positions, const float* tcoords, const float* normals, const unsigned int* indices, unsigned int n_vertices, unsigned int n_indices) {
     // Allocate objects
     vao_t* vao = malloc(sizeof(vao_t));
     GLuint buffers[2];
@@ -109,6 +109,33 @@ texture_t* loader_load_texture(const char* path) {
     return texture_struct;
 }
 
+fbo_t* loader_load_framebuffer(int width, int height) {
+    fbo_t* fbo = malloc(sizeof(fbo_t));
+    glGenFramebuffers(1, &(fbo->framebuffer));
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo->framebuffer);
+    fbo->width = width;
+    fbo->height = height;
+
+    // Color texture
+    glGenTextures(1, &(fbo->color_texture));
+    glBindTexture(GL_TEXTURE_2D, fbo->color_texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo->color_texture, 0);
+
+    // Depth texture
+    glGenTextures(1, &(fbo->depth_texture));
+    glBindTexture(GL_TEXTURE_2D, fbo->depth_texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, fbo->depth_texture, 0);
+    
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    return fbo;
+}
+
 ssbo_t* loader_load_ssbo(void* data, unsigned int size) {
     GLuint buffer;
     glGenBuffers(1, &buffer);
@@ -119,6 +146,37 @@ ssbo_t* loader_load_ssbo(void* data, unsigned int size) {
     ssbo->ssbo = buffer;
     ssbo->size = size;
     return ssbo;
+}
+
+void loader_resize_framebuffer(fbo_t* fbo, int width, int height) {
+    // Don't resize a framebuffer that matches the desired size
+    if (width == fbo->width && height == fbo->height) {
+        return;
+    }
+    fbo->width = width;
+    fbo->height = height;
+
+    // Delete the old framebuffer minus the free
+    GLuint textures[] = { fbo->color_texture, fbo->depth_texture };
+    glDeleteTextures(2, textures);
+    glDeleteFramebuffers(1, &(fbo->framebuffer));
+
+    // Create a new framebuffer minus the malloc
+    glGenFramebuffers(1, &(fbo->framebuffer));
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo->framebuffer);
+    glGenTextures(1, &(fbo->color_texture));
+    glBindTexture(GL_TEXTURE_2D, fbo->color_texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo->color_texture, 0);
+    glGenTextures(1, &(fbo->depth_texture));
+    glBindTexture(GL_TEXTURE_2D, fbo->depth_texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, width, height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, fbo->depth_texture, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void loader_update_ssbo(ssbo_t* ssbo, void* data, unsigned int size) {
@@ -156,6 +214,13 @@ void loader_free_vao(vao_t* vao) {
 void loader_free_texture(texture_t* texture) {
     glDeleteTextures(1, &(texture->texture));
     free(texture);
+}
+
+void loader_free_framebuffer(fbo_t* fbo) {
+    GLuint textures[] = { fbo->color_texture, fbo->depth_texture };
+    glDeleteTextures(2, textures);
+    glDeleteFramebuffers(1, &(fbo->framebuffer));
+    free(fbo);
 }
 
 void loader_free_ssbo(ssbo_t* ssbo) {
