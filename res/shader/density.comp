@@ -1,0 +1,44 @@
+#version 460 core
+
+struct particle_t {
+    mat4 model_view_matrix;
+    vec3 x;
+    float rho;
+    vec3 vh;
+    float pad1;
+    vec3 v;
+    float pad2;
+    vec3 a;
+    float pad3;
+};
+
+layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+layout(std430, binding = 1) coherent buffer s_particles {
+    particle_t particles[];
+};
+
+uniform int u_n_particles;
+uniform float u_mass;
+
+const float h = 5e-2;
+const float h2 = h * h;
+const float h8 = (h2 * h2) * (h2 * h2);
+
+#define PI 3.1415926538
+
+void main() {
+    float c = 4.0 * u_mass / PI / h8;
+    particles[gl_GlobalInvocationID.x].rho = 4.0 * u_mass / PI / h2;
+    
+    for (int i = 0; i < u_n_particles; i++) {
+        vec3 dx = particles[gl_GlobalInvocationID.x].x - particles[i].x;
+        float r2 = dot(dx, dx);
+        particles[gl_GlobalInvocationID.x].pad1 = particles[gl_GlobalInvocationID.x].x.x;
+        float z = h2 - r2;
+        float rho_contrib = (c * z * z * z) * float(z > 0) * float(gl_GlobalInvocationID.x != i);
+        particles[gl_GlobalInvocationID.x].pad2 = dx.y;
+        particles[gl_GlobalInvocationID.x].pad3 = dx.z;
+        particles[gl_GlobalInvocationID.x].rho += rho_contrib;
+    }
+}

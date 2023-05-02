@@ -15,8 +15,8 @@ GLuint _allocate_shader(const char* path, GLenum type) {
     glShaderSource(shader, 1, (const GLchar* const*)&source, NULL);
     glCompileShader(shader);
     free(source);
-    GLint success;
 
+    GLint success;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
     char infoLog[512];
     if (!success) {
@@ -34,14 +34,23 @@ shader_t* shader_create(const char* vert_path, const char* frag_path) {
     glAttachShader(program, vertex);
     glAttachShader(program, fragment);
     glLinkProgram(program);
+
+    GLint success;
+    glGetProgramiv(program, GL_LINK_STATUS, &success);
+    char infoLog[512];
+    if(!success) {
+        glGetProgramInfoLog(program, 512, NULL, infoLog);
+        printf("Program link error:\n%s\n", infoLog);
+    }
     glDeleteShader(vertex);
     glDeleteShader(fragment);
+    
     shader_t* shader_struct = malloc(sizeof(shader_t));
     shader_struct->program = program;
     return shader_struct;
 }
 
-shader_t* shader_compute(const char* path) {
+shader_t* shader_create_compute(const char* path) {
     GLuint compute = _allocate_shader(path, GL_COMPUTE_SHADER);
     GLuint program = glCreateProgram();
     glAttachShader(program, compute);
@@ -71,4 +80,16 @@ void uniform_mat4(GLint location, mat4 m) {
 
 void uniform_vec3(GLint location, vec3 v) {
     glUniform3f(location, v[0], v[1], v[2]);
+}
+
+void uniform_float(GLint location, float f) {
+    glUniform1f(location, f);
+}
+
+void uniform_int(GLint location, int i) {
+    glUniform1i(location, i);
+}
+
+GLuint ssbo_find(shader_t* shader, const char* name) {
+    return glGetProgramResourceIndex(shader->program, GL_SHADER_STORAGE_BLOCK, name);
 }

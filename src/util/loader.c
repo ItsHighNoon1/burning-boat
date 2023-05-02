@@ -109,6 +109,42 @@ texture_t* loader_load_texture(const char* path) {
     return texture_struct;
 }
 
+ssbo_t* loader_load_ssbo(void* data, unsigned int size) {
+    GLuint buffer;
+    glGenBuffers(1, &buffer);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, size, data, GL_DYNAMIC_COPY);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    ssbo_t* ssbo = malloc(sizeof(ssbo_t));
+    ssbo->ssbo = buffer;
+    ssbo->size = size;
+    return ssbo;
+}
+
+void loader_update_ssbo(ssbo_t* ssbo, void* data, unsigned int size) {
+    if (size > ssbo->size) {
+        size = ssbo->size;
+    }
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo->ssbo);
+    GLvoid* p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_WRITE_ONLY);
+    memcpy(p, data, size);
+    glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+}
+
+void loader_get_ssbo(ssbo_t* ssbo, void* buffer, unsigned int size) {
+    // SLOW AS FUCK!!!!
+    // ONLY USE FOR DEBUG!!!
+    if (size < ssbo->size) {
+        size = ssbo->size;
+    }
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo->ssbo);
+    GLvoid* p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
+    memcpy(buffer, p, size);
+    glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+}
+
 void loader_free_vao(vao_t* vao) {
     // Free objects
     GLuint buffers[] = { vao->vertex_buffer, vao->index_buffer };
@@ -120,4 +156,9 @@ void loader_free_vao(vao_t* vao) {
 void loader_free_texture(texture_t* texture) {
     glDeleteTextures(1, &(texture->texture));
     free(texture);
+}
+
+void loader_free_ssbo(ssbo_t* ssbo) {
+    glDeleteBuffers(1, &(ssbo->ssbo));
+    free(ssbo);
 }

@@ -35,16 +35,16 @@ int main(int argc, char** argv) {
     vao_t* vao = loader_load_vao(vertices, tcoords, NULL, indices, 4, 6);
     texture_t* texture = loader_load_texture("res/texture/normal_sphere.png");
 
-    sim_t* sim = sim_create(5000);
-
-    GLint location_model_view = uniform_find(shader, "u_model_view_matrix");
+    GLuint location_particles = ssbo_find(shader, "s_particles");
+    
     GLint location_projection = uniform_find(shader, "u_projection_matrix");
-    GLint location_debug = uniform_find(shader, "u_debug");
     mat4 model;
     mat4 view;
     mat4 proj;
     
     vec3 camera_trans = { 12.0f, -12.0f, -12.0f };
+
+    sim_t* sim = sim_create(5000);
     
     while (!display_should_close(window)) {
         sim_step(sim);
@@ -59,6 +59,10 @@ int main(int argc, char** argv) {
         render_prepare();
         render_bind_texture(texture);
         shader_bind(shader);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, sim->ssbo->ssbo);
+
+        uniform_mat4(location_projection, proj);
+
         for (unsigned int i = 0; i < sim->n_particles; i++) {
             glm_translate_make(model, sim->particles[i].x);
             glm_rotate_y(model, -0.8f, model);
@@ -66,13 +70,13 @@ int main(int argc, char** argv) {
             glm_scale_uni(model, 1.0f);
             mat4 mv;
             glm_mat4_mul(view, model, mv);
-            uniform_mat4(location_model_view, mv);
-            uniform_mat4(location_projection, proj);
-            vec3 debug;
-            glm_vec3_copy(sim->particles[i].v, debug);
-            uniform_vec3(location_debug, debug);
-            render_vao(vao);
+            glm_mat4_copy(mv, sim->particles[i].model_view_matrix);
         }
+
+        loader_update_ssbo(sim->ssbo, sim->particles, sim->n_particles * sizeof(particle_t));
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+        glDrawElementsInstanced(GL_TRIANGLES, vao->vertex_count, GL_UNSIGNED_INT, 0, sim->n_particles);
 
         display_refresh(window);
     }

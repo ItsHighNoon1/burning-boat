@@ -2,13 +2,27 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 #include <cglm/cglm.h>
 
+#include "../render/shader.h"
+#include "../util/loader.h"
+
 // https://www.cs.cornell.edu/~bindel/class/cs5220-f11/code/sph.pdf
 
 void _compute_densities(sim_t* sim) {
+    /*
+    shader_bind(sim->density_compute);
+    uniform_int(sim->location_n_particles, sim->n_particles);
+    uniform_float(sim->location_mass, 1.0f);
+    glDispatchCompute(sim->n_particles, 1, 1);
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+    
+    loader_get_ssbo(sim->ssbo, sim->particles, sim->n_particles * sizeof(particle_t));
+    */
+    
     float h2 = sim->h * sim->h;
     float h8 = (h2 * h2) * (h2 * h2);
     float c = 4.0f * sim->mass / GLM_PI / h8;
@@ -149,19 +163,22 @@ sim_t* sim_create(unsigned int n_particles) {
     time_t t;
     srand((unsigned) time(&t));
     for (unsigned int i = 0; i < n_particles; i++) {
-        sim->particles[i].rho = 0.0f;
         sim->particles[i].x[0] = (float)rand() / (float)RAND_MAX;
         sim->particles[i].x[1] = (float)rand() / (float)RAND_MAX;
         sim->particles[i].x[2] = (float)rand() / (float)RAND_MAX;
+        sim->particles[i].rho = 0.0f;
         sim->particles[i].vh[0] = 0.0f;
         sim->particles[i].vh[1] = 0.0f;
         sim->particles[i].vh[2] = 0.0f;
+        sim->particles[i].pad1 = 1.0f;
         sim->particles[i].v[0] = 0.0f;
         sim->particles[i].v[1] = 0.0f;
         sim->particles[i].v[2] = 0.0f;
+        sim->particles[i].pad2 = 2.0f;
         sim->particles[i].a[0] = 0.0f;
         sim->particles[i].a[1] = 0.0f;
         sim->particles[i].a[2] = 0.0f;
+        sim->particles[i].pad3 = 3.0f;
     }
     sim->dt = 0.0016;
     sim->h = 5e-2f;
@@ -171,6 +188,14 @@ sim_t* sim_create(unsigned int n_particles) {
     sim->g[0] = 0.0f;
     sim->g[1] = -1.0f;
     sim->g[2] = 0.0f;
+
+    // Get shaders and uniforms
+    sim->density_compute = shader_create_compute("res/shader/density.comp");
+    sim->location_n_particles = uniform_find(sim->density_compute, "u_n_particles");
+    sim->location_mass = uniform_find(sim->density_compute, "u_mass");
+
+    sim->ssbo = loader_load_ssbo(sim->particles, sim->n_particles * sizeof(particle_t));
+
     _normalize_mass(sim);
 
     return sim;
@@ -182,6 +207,8 @@ void sim_step(sim_t* sim) {
 }
 
 void sim_free(sim_t* sim) {
+    loader_free_ssbo(sim->ssbo);
+    shader_free(sim->density_compute);
     free(sim->particles);
     free(sim);
 }
