@@ -109,6 +109,38 @@ texture_t* loader_load_texture(const char* path) {
     return texture_struct;
 }
 
+cubemap_t* loader_load_cubemap(const char* right, const char* left, const char* top, const char* bottom, const char* front, const char* back) {
+    cubemap_t* cubemap = malloc(sizeof(cubemap));
+    const char* face_paths[6] = { right, left, top, bottom, front, back };
+
+    // Allocate texture
+    GLuint texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
+
+    // Load texture
+    for (unsigned int i = 0; i < 6; i++) {
+        int width;
+        int height;
+        int comp;
+        stbi_set_flip_vertically_on_load(0);
+        stbi_uc* data = stbi_load(face_paths[i], &width, &height, &comp, 4);
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        stbi_image_free(data);
+    }
+    glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+
+    // Params
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    cubemap->texture = texture;
+    return cubemap;
+}
+
 fbo_t* loader_load_framebuffer(int width, int height) {
     fbo_t* fbo = malloc(sizeof(fbo_t));
     glGenFramebuffers(1, &(fbo->framebuffer));
@@ -136,7 +168,7 @@ fbo_t* loader_load_framebuffer(int width, int height) {
     return fbo;
 }
 
-ssbo_t* loader_load_ssbo(void* data, unsigned int size) {
+ssbo_t* loader_load_ssbo(const void* data, unsigned int size) {
     GLuint buffer;
     glGenBuffers(1, &buffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer);
@@ -179,7 +211,7 @@ void loader_resize_framebuffer(fbo_t* fbo, int width, int height) {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void loader_update_ssbo(ssbo_t* ssbo, void* data, unsigned int size) {
+void loader_update_ssbo(ssbo_t* ssbo, const void* data, unsigned int size) {
     if (size > ssbo->size) {
         size = ssbo->size;
     }
@@ -214,6 +246,11 @@ void loader_free_vao(vao_t* vao) {
 void loader_free_texture(texture_t* texture) {
     glDeleteTextures(1, &(texture->texture));
     free(texture);
+}
+
+void loader_free_cubemap(cubemap_t* cubemap) {
+    glDeleteTextures(1, &(cubemap->texture));
+    free(cubemap);
 }
 
 void loader_free_framebuffer(fbo_t* fbo) {

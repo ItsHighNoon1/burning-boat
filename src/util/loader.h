@@ -15,6 +15,10 @@ typedef struct {
 } texture_t;
 
 typedef struct {
+    GLuint texture;
+} cubemap_t;
+
+typedef struct {
     GLuint color_texture;
     GLuint depth_texture;
     GLuint framebuffer;
@@ -31,19 +35,23 @@ vao_t* loader_load_vao(const float* positions, const float* tcoords, const float
 
 texture_t* loader_load_texture(const char* path);
 
+cubemap_t* loader_load_cubemap(const char* right, const char* left, const char* top, const char* bottom, const char* front, const char* back);
+
 fbo_t* loader_load_framebuffer(int width, int height);
 
-ssbo_t* loader_load_ssbo(void* data, unsigned int size);
+ssbo_t* loader_load_ssbo(const void* data, unsigned int size);
 
 void loader_resize_framebuffer(fbo_t* fbo, int width, int height);
 
-void loader_update_ssbo(ssbo_t* ssbo, void* data, unsigned int size);
+void loader_update_ssbo(ssbo_t* ssbo, const void* data, unsigned int size);
 
 void loader_get_ssbo(ssbo_t* ssbo, void* buffer, unsigned int size);
 
 void loader_free_vao(vao_t* vao);
 
 void loader_free_texture(texture_t* texture);
+
+void loader_free_cubemap(cubemap_t* cubemap);
 
 void loader_free_framebuffer(fbo_t* fbo);
 

@@ -16,5 +16,5 @@ void main() {
         discard;
     }
 
-    out_frag_color = vec4(1.0 - r2) * 0.01;
+    out_frag_color = vec4(1.0 - r2) * 0.03;
 }

@@ -10,6 +10,8 @@
 #include "../render/shader.h"
 #include "../util/loader.h"
 
+#define BOX_RAD 10.0f
+
 // https://www.cs.cornell.edu/~bindel/class/cs5220-f11/code/sph.pdf
 
 void _compute_densities(sim_t* sim) {
@@ -88,29 +90,29 @@ void _compute_accelerations(sim_t* sim) {
 
 void _reflect_bc(sim_t* sim) {
     for (unsigned int i = 0; i < sim->n_particles; i++) {
-        if (sim->particles[i].x[0] > 5.0f) {
-            sim->particles[i].x[0] = 5.0f;
+        if (sim->particles[i].x[0] > BOX_RAD) {
+            sim->particles[i].x[0] = BOX_RAD;
             sim->particles[i].v[0] = -sim->particles[i].v[0];
             sim->particles[i].vh[0] = -sim->particles[i].vh[0];
             glm_vec3_scale(sim->particles[i].v, 0.5f, sim->particles[i].v);
             glm_vec3_scale(sim->particles[i].vh, 0.5f, sim->particles[i].vh);
         }
-        if (sim->particles[i].x[0] < -5.0f) {
-            sim->particles[i].x[0] = -5.0f;
+        if (sim->particles[i].x[0] < -BOX_RAD) {
+            sim->particles[i].x[0] = -BOX_RAD;
             sim->particles[i].v[0] = -sim->particles[i].v[0];
             sim->particles[i].vh[0] = -sim->particles[i].vh[0];
             glm_vec3_scale(sim->particles[i].v, 0.5f, sim->particles[i].v);
             glm_vec3_scale(sim->particles[i].vh, 0.5f, sim->particles[i].vh);
         }
-        if (sim->particles[i].x[2] > 5.0f) {
-            sim->particles[i].x[2] = 5.0f;
+        if (sim->particles[i].x[2] > BOX_RAD) {
+            sim->particles[i].x[2] = BOX_RAD;
             sim->particles[i].v[2] = -sim->particles[i].v[2];
             sim->particles[i].vh[2] = -sim->particles[i].vh[2];
             glm_vec3_scale(sim->particles[i].v, 0.5f, sim->particles[i].v);
             glm_vec3_scale(sim->particles[i].vh, 0.5f, sim->particles[i].vh);
         }
-        if (sim->particles[i].x[2] < -5.0f) {
-            sim->particles[i].x[2] = -5.0f;
+        if (sim->particles[i].x[2] < -BOX_RAD) {
+            sim->particles[i].x[2] = -BOX_RAD;
             sim->particles[i].v[2] = -sim->particles[i].v[2];
             sim->particles[i].vh[2] = -sim->particles[i].vh[2];
             glm_vec3_scale(sim->particles[i].v, 0.5f, sim->particles[i].v);
@@ -163,9 +165,9 @@ sim_t* sim_create(unsigned int n_particles) {
     time_t t;
     srand((unsigned) time(&t));
     for (unsigned int i = 0; i < n_particles; i++) {
-        sim->particles[i].x[0] = (float)rand() / (float)RAND_MAX * 5.0f;
-        sim->particles[i].x[1] = (float)rand() / (float)RAND_MAX * 5.0f;
-        sim->particles[i].x[2] = (float)rand() / (float)RAND_MAX * 5.0f;
+        sim->particles[i].x[0] = ((float)rand() / (float)RAND_MAX * 2.0f - 1.0f) * BOX_RAD;
+        sim->particles[i].x[1] = ((float)rand() / (float)RAND_MAX * 2.0f - 1.0f) * BOX_RAD;
+        sim->particles[i].x[2] = ((float)rand() / (float)RAND_MAX * 2.0f - 1.0f) * BOX_RAD;
         sim->particles[i].rho = 0.0f;
         sim->particles[i].vh[0] = 0.0f;
         sim->particles[i].vh[1] = 0.0f;
@@ -181,7 +183,7 @@ sim_t* sim_create(unsigned int n_particles) {
         sim->particles[i].pad3 = 3.0f;
     }
     sim->dt = 0.01;
-    sim->h = 2e-1f;
+    sim->h = 5e-1f;
     sim->rho0 = 1000.0f;
     sim->k = 1e3f;
     sim->mu = 0.1f;
